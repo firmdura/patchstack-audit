@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "outcome": "failed",
+  "stage": "execution",
+  "reason": "patch_failed",
+  "source": {
+    "path": "demo.tar.gz",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "root_dir": "demo-1.0"
+  },
+  "patches": [
+    {
+      "id": "z-first",
+      "file": "0001-first.patch",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "upstream": "local:demonstration",
+      "cves": [
+        "CVE-2025-0001",
+        "CVE-2024-10000"
+      ],
+      "status": "applied",
+      "reason": "none"
+    },
+    {
+      "id": "a-second",
+      "file": "0002-second.patch",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "upstream": "https://example.org/commit/demo",
+      "status": "failed",
+      "reason": "patch_failed"
+    }
+  ],
+  "digest_definition": "SHA-256 of the UTF-8 manifest, sorted by relative path bytes; each regular file contributes path NUL four-digit octal intended mode NUL lowercase content SHA-256 LF; empty directories, uid, gid and timestamps are excluded.",
+  "limitations": "Hashes establish byte identity and clean patch application establishes reproduction of declared inputs. Neither proves trusted provenance, a security repair, CVE applicability, a successful build, or compliance."
+}

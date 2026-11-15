@@ -1,0 +1,10 @@
+--- a/main.c
++++ b/main.c
+@@ -7,6 +7,6 @@
+ 
+ int main(void)
+ {
+-    printf("sum: %d\n", sum(2, 3));
++    printf("total: %d\n", sum(2, 3));
+     return 0;
+ }

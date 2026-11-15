@@ -1,0 +1,16 @@
+schema_version: 1
+source:
+  path: source.tar.gz
+  sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  root_dir: demo-1.0
+patch_dir: patches
+patches:
+  - id: first
+    file: first.patch
+    sha256: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+    upstream: local:demonstration
+    cves: [CVE-2024-0001]
+  - id: second
+    file: second.patch
+    sha256: 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
+    upstream: https://example.org/project/commit/abc
