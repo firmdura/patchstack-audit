@@ -15,20 +15,33 @@ import (
 	"github.com/firmdura/patchstack-audit/internal/contracts"
 )
 
-// API supplies the manifest loader, audit function and report writers used by
-// both the command and library callers.
+// API supplies the command version and the manifest loader, audit function and
+// report writers used by both the command and library callers.
 type API struct {
+	Version       string
 	LoadManifest  func(io.Reader) (contracts.Manifest, error)
 	Audit         func(context.Context, contracts.Manifest, contracts.Options) (contracts.Report, error)
 	WriteJSON     func(io.Writer, contracts.Report) error
 	WriteMarkdown func(io.Writer, contracts.Report) error
 }
 
-// Run handles one audit command, writing the report to stdout and diagnostics to
-// stderr. It returns 0 for success, 1 for an expected mismatch, or 2 for a usage
-// or operational error. It does not exit the calling process.
+// Run handles a version request or one audit command, writing output to stdout
+// and diagnostics to stderr. It returns 0 for success, 1 for an expected mismatch,
+// or 2 for a usage or operational error. It does not exit the calling process.
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer, api API) int {
+	if len(args) == 1 && args[0] == "--version" {
+		version := api.Version
+		if version == "" {
+			version = "dev"
+		}
+		if _, err := fmt.Fprintf(stdout, "patchstack %s\n", version); err != nil {
+			fmt.Fprintln(stderr, "cannot write version:", err)
+			return 2
+		}
+		return 0
+	}
 	usage := func() int {
+		fmt.Fprintln(stderr, "usage: patchstack --version")
 		fmt.Fprintln(stderr, "usage: patchstack audit --manifest stack.yaml --input-root ./inputs --output ./out [--format json|markdown] [--patch-executable patch]")
 		return 2
 	}

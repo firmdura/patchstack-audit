@@ -11,8 +11,8 @@ version=$1
 ref=$2
 output=$3
 case "$version" in
-    v1.0.0) ;;
-    *) echo 'Supported release version is v1.0.0' >&2; exit 2 ;;
+    v1.0.1) ;;
+    *) echo 'Supported release version is v1.0.1' >&2; exit 2 ;;
 esac
 case "$output" in /*) ;; *) echo 'Release output must be an absolute path' >&2; exit 2 ;; esac
 [ ! -e "$output" ] && [ ! -L "$output" ] || { echo 'Release output must be absent' >&2; exit 1; }
@@ -36,7 +36,7 @@ for arch in amd64 arm64; do
     name=$prefix-linux-$arch
     mkdir -p "$work/$name/LICENSES"
     CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -trimpath -buildvcs=false \
-        -ldflags='-s -w -buildid=' -o "$work/$name/patchstack" ./cmd/patchstack
+        -ldflags="-s -w -buildid= -X main.version=$version" -o "$work/$name/patchstack" ./cmd/patchstack
     chmod 0755 "$work/$name/patchstack"
     install -m 0644 LICENSE "$work/$name/LICENSE"
     install -m 0644 LICENSES/go-yaml-v3.txt "$work/$name/LICENSES/go-yaml-v3.txt"

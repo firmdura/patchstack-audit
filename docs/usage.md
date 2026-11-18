@@ -5,9 +5,9 @@ The format restrictions later in the guide explain which archives and patches
 version 1 accepts. For error codes and recovery steps, see
 [troubleshooting](troubleshooting.md).
 
-## Install v1.0.0
+## Install v1.0.1
 
-The [v1.0.0 release](https://github.com/firmdura/patchstack-audit/releases/tag/v1.0.0)
+The [v1.0.1 release](https://github.com/firmdura/patchstack-audit/releases/tag/v1.0.1)
 provides source archives, Linux binaries for amd64 and arm64, and a `SHA256SUMS`
 file. Binary archives include a ready-to-run example and do not require Go.
 [Verify the checksums](#ci-and-release-preparation) before extracting an archive.
@@ -18,13 +18,27 @@ access for this command:
 
 ```sh
 GOTOOLCHAIN=go1.27.4 GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org \
-  go install github.com/firmdura/patchstack-audit/cmd/patchstack@v1.0.0
+  go install github.com/firmdura/patchstack-audit/cmd/patchstack@v1.0.1
 ```
 
 Add Go's installation directory for executables to your `PATH` so you can run
-`patchstack`. See the [Go API reference for v1.0.0](https://pkg.go.dev/github.com/firmdura/patchstack-audit@v1.0.0/pkg/patchstack)
+`patchstack`. See the [Go API reference for v1.0.1](https://pkg.go.dev/github.com/firmdura/patchstack-audit@v1.0.1/pkg/patchstack)
 for the library's exported types and functions. Audits use only local inputs and
 make no network calls.
+
+### Check the installed version
+
+```sh
+patchstack --version
+# patchstack v1.0.1
+```
+
+This command writes the version to standard output and exits successfully without
+reading a manifest, creating output or invoking GNU patch. It identifies release
+archives and versioned `go install` builds. Source builds use Go's available
+version metadata, which can include a commit-derived version or a `+dirty` suffix;
+builds without version metadata report `patchstack dev`. Extra arguments are
+usage errors, and an output write failure returns exit status `2`.
 
 ## Build from this checkout
 
@@ -455,28 +469,28 @@ output and standard error separately; there is no partial output directory.
 ### Reproduce the release archives
 
 Use a clean Git checkout on Linux, with the release tag and pinned dependencies
-already available. The following commands build from the immutable `v1.0.0` tag.
-The destination `/tmp/patchstack-v1.0.0-release` must not already exist:
+already available. The following commands build from the immutable `v1.0.1` tag.
+The destination `/tmp/patchstack-v1.0.1-release` must not already exist:
 
 ```sh
-./scripts/release.sh v1.0.0 v1.0.0 /tmp/patchstack-v1.0.0-release
-cd /tmp/patchstack-v1.0.0-release
+./scripts/release.sh v1.0.1 v1.0.1 /tmp/patchstack-v1.0.1-release
+cd /tmp/patchstack-v1.0.1-release
 sha256sum -c SHA256SUMS
 ```
 
 The script creates these files:
 
 ```text
-patchstack-audit-v1.0.0-source.tar.gz
-patchstack-audit-v1.0.0-linux-amd64.tar.gz
-patchstack-audit-v1.0.0-linux-arm64.tar.gz
+patchstack-audit-v1.0.1-source.tar.gz
+patchstack-audit-v1.0.1-linux-amd64.tar.gz
+patchstack-audit-v1.0.1-linux-arm64.tar.gz
 SHA256SUMS
 ```
 
 It uses only the selected Git revision, includes the original and third-party
 licenses, and produces reproducible archives. Running the script prepares files
 locally; it does not create a tag, publish a release or request pkg.go.dev indexing.
-The `make release` target defaults to version `v1.0.0` and the current commit.
+The `make release` target defaults to version `v1.0.1` and the current commit.
 Set `RELEASE_VERSION`, `RELEASE_REF` and `RELEASE_DIR` to choose another supported
 version, Git revision or output directory.
 
@@ -494,7 +508,7 @@ run the checksum command above before extracting an archive. If you downloaded
 only one archive, select its entry from `SHA256SUMS`:
 
 ```sh
-grep '  patchstack-audit-v1.0.0-linux-amd64.tar.gz$' SHA256SUMS | sha256sum -c -
+grep '  patchstack-audit-v1.0.1-linux-amd64.tar.gz$' SHA256SUMS | sha256sum -c -
 ```
 
 Use `linux-arm64` in that command if you downloaded the arm64 archive. A matching

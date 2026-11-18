@@ -48,6 +48,27 @@ type errorWriter struct{}
 
 func (errorWriter) Write([]byte) (int, error) { return 0, errors.New("downstream write failed") }
 
+func TestRunVersionWithoutAudit(t *testing.T) {
+	for _, tc := range []struct {
+		version string
+		want    string
+	}{
+		{"", "patchstack dev\n"},
+		{"v1.0.1", "patchstack v1.0.1\n"},
+	} {
+		t.Run(tc.want, func(t *testing.T) {
+			var out, diagnostics bytes.Buffer
+			api := API{Version: tc.version}
+			if code := Run(context.Background(), []string{"--version"}, &out, &diagnostics, api); code != 0 || out.String() != tc.want || diagnostics.Len() != 0 {
+				t.Fatalf("code=%d out=%q diagnostics=%q", code, out.String(), diagnostics.String())
+			}
+			if code := Run(context.Background(), []string{"--version"}, errorWriter{}, &diagnostics, api); code != 2 || !strings.Contains(diagnostics.String(), "cannot write version:") {
+				t.Fatalf("code=%d diagnostics=%q", code, diagnostics.String())
+			}
+		})
+	}
+}
+
 func TestRunMalformedManifestAndUsageDoNotAudit(t *testing.T) {
 	manifest := filepath.Join(t.TempDir(), "stack.yaml")
 	if err := os.WriteFile(manifest, []byte("bad"), 0600); err != nil {
@@ -59,7 +80,7 @@ func TestRunMalformedManifestAndUsageDoNotAudit(t *testing.T) {
 		t.Fatal("audit called")
 		return contracts.Report{}, nil
 	}, WriteJSON: func(io.Writer, contracts.Report) error { t.Fatal("writer called"); return nil }, WriteMarkdown: func(io.Writer, contracts.Report) error { t.Fatal("writer called"); return nil }}
-	for _, args := range [][]string{nil, {"audit", "--format", "unsupported"}, {"audit", "--manifest", manifest, "--input-root", "inputs", "--output", "out"}} {
+	for _, args := range [][]string{nil, {"--version", "extra"}, {"audit", "--version"}, {"audit", "--format", "unsupported"}, {"audit", "--manifest", manifest, "--input-root", "inputs", "--output", "out"}} {
 		var out, diagnostics bytes.Buffer
 		if code := Run(context.Background(), args, &out, &diagnostics, api); code != 2 || out.Len() != 0 || diagnostics.Len() == 0 {
 			t.Fatalf("code=%d out=%s diagnostics=%s", code, out.String(), diagnostics.String())
