@@ -116,6 +116,13 @@ behavior.
 - [Error reasons, diagnostics and troubleshooting](docs/troubleshooting.md)
 - [Detailed version 1 contracts](docs/contracts.md)
 
+## About Firmdura
+
+This repository contains a standalone verification utility from
+[Firmdura](https://firmdura.com). Firmdura's commercial offer is shared embedded
+Linux security maintenance through versioned security layers or patch overlays
+for agreed user-space components.
+
 ## License
 
 Original code and the original example and test fixtures use
