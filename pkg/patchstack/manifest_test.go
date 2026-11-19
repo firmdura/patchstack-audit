@@ -84,9 +84,6 @@ func TestManifestValidation(t *testing.T) {
 		"extension":           strings.Replace(base, "source.tar.gz", "source.tgz", 1),
 		"cve-lowercase":       strings.Replace(base, "CVE-2024-0001", "cve-2024-0001", 1),
 		"cve-short":           strings.Replace(base, "CVE-2024-0001", "CVE-2024-001", 1),
-		"duplicate-id":        strings.Replace(base, "id: second", "id: first", 1),
-		"duplicate-file":      strings.Replace(base, "file: second.patch", "file: first.patch", 1),
-		"duplicate-hash":      strings.Replace(base, strings.Repeat("c", 64), strings.Repeat("b", 64), 1),
 		"empty-id":            strings.Replace(base, "id: first", "id: ''", 1),
 		"local-empty":         strings.Replace(base, "local:demonstration", "local:", 1),
 		"local-whitespace":    strings.Replace(base, "local:demonstration", "'local:  '", 1),
@@ -119,6 +116,32 @@ func TestManifestValidation(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestManifestDuplicatePatchDiagnostics(t *testing.T) {
+	base := validYAML(t)
+	newHash := strings.Repeat("d", 64)
+	for _, tc := range []struct {
+		field, id, file, hash string
+		first                 int
+	}{
+		{"id", "second", "third.patch", newHash, 1},
+		{"file", "third", "first.patch", newHash, 0},
+		{"sha256", "third", "third.patch", strings.Repeat("c", 64), 1},
+	} {
+		t.Run(tc.field, func(t *testing.T) {
+			input := base + fmt.Sprintf("  - id: %s\n    file: %s\n    sha256: '%s'\n    upstream: local:demo\n", tc.id, tc.file, tc.hash)
+			m, err := patchstack.LoadManifest(strings.NewReader(input))
+			var run *patchstack.RunError
+			if !errors.As(err, &run) || run.Stage != patchstack.StageManifest || run.Reason != patchstack.ReasonInvalidManifest || m.SchemaVersion != 0 {
+				t.Fatalf("want empty manifest and typed invalid manifest, got %#v, %v", m, err)
+			}
+			want := fmt.Sprintf("invalid patches[2].%s (duplicates patches[%d].%s)", tc.field, tc.first, tc.field)
+			if run.Err == nil || run.Err.Error() != want {
+				t.Fatalf("diagnostic = %v, want %q", run.Err, want)
+			}
+		})
 	}
 }
 
