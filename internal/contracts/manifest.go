@@ -36,23 +36,36 @@ func (m Manifest) Validate() error {
 	if len(m.Patches) > MaxPatches {
 		return bad("patches count")
 	}
-	ids := make(map[string]bool)
-	files := make(map[string]bool)
-	hashes := make(map[string]bool)
+	ids := make(map[string]int)
+	files := make(map[string]int)
+	hashes := make(map[string]int)
+	record := func(seen map[string]int, index int, name, value string) error {
+		if first, ok := seen[value]; ok {
+			return bad(fmt.Sprintf("patches[%d].%s (duplicates patches[%d].%s)", index, name, first, name))
+		}
+		seen[value] = index
+		return nil
+	}
 	for i, p := range m.Patches {
 		field := fmt.Sprintf("patches[%d]", i)
-		if strings.TrimSpace(p.ID) == "" || !utf8.ValidString(p.ID) || ids[p.ID] {
+		if strings.TrimSpace(p.ID) == "" || !utf8.ValidString(p.ID) {
 			return bad(field + ".id")
 		}
-		ids[p.ID] = true
-		if ValidateBasename(p.File) != nil || files[p.File] {
+		if err := record(ids, i, "id", p.ID); err != nil {
+			return err
+		}
+		if ValidateBasename(p.File) != nil {
 			return bad(field + ".file")
 		}
-		files[p.File] = true
-		if !hashPattern.MatchString(p.SHA256) || hashes[p.SHA256] {
+		if err := record(files, i, "file", p.File); err != nil {
+			return err
+		}
+		if !hashPattern.MatchString(p.SHA256) {
 			return bad(field + ".sha256")
 		}
-		hashes[p.SHA256] = true
+		if err := record(hashes, i, "sha256", p.SHA256); err != nil {
+			return err
+		}
 		if !validProvenance(p.Upstream) {
 			return bad(field + ".upstream")
 		}
