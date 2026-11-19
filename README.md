@@ -1,7 +1,6 @@
 # PatchStack Audit
 
 [![Latest release](https://img.shields.io/github/v/release/firmdura/patchstack-audit)](https://github.com/firmdura/patchstack-audit/releases/latest)
-[![CI status](https://img.shields.io/github/check-runs/firmdura/patchstack-audit/main?label=CI)](https://github.com/firmdura/patchstack-audit/actions)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![Go Reference](https://pkg.go.dev/badge/github.com/firmdura/patchstack-audit/pkg/patchstack.svg)](https://pkg.go.dev/github.com/firmdura/patchstack-audit/pkg/patchstack)
 

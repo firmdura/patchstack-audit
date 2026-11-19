@@ -225,13 +225,12 @@ func WriteMarkdown(io.Writer, Report) error
 `Options` supplies the input root, output directory and GNU patch executable.
 `Audit` uses the same staging, validation, result rules and atomic publication as
 the CLI. The library does not call `os.Exit`, use global state or make implicit
-network calls. Canonical hash helpers may be exposed where appropriate.
+network calls.
 
 The authoritative shared models, enums and adapter interfaces live in
 `internal/contracts`. `pkg/patchstack/types.go` exposes type and constant aliases.
 Internal packages import `internal/contracts` and never import the public facade.
-The public facade may import internal implementations. This import direction is
-a fixed part of the foundation contract.
+The public package calls the internal implementations.
 
 Input readers preserve the identity of verified inputs. Source preparation keeps
 extraction confined to the workspace. The executor determines strict application
@@ -240,13 +239,7 @@ only display results. Preparation reads original inputs without modifying them;
 execution sees only validated private workspace files. CLI callers and library
 callers cannot bypass these shared path checks.
 
-Source preparation, patch inventory validation and reporting each depend on the
-foundation and can be implemented in parallel. Reporting uses the shared report
-contract and can be tested with fixture reports. Execution depends on both
-preparation components. API/CLI integration and publication depend on execution
-and reporting. Documentation and final acceptance follow all of these components.
-
-## Verification and documentation requirements
+## Verification
 
 Final acceptance runs these commands from a clean checkout in the documented
 Linux environment:
@@ -269,31 +262,19 @@ mismatch, stale inventory and refusal of existing output, with no partial output
 A temporary external Go module proves that the public API is importable and has
 the same behavior.
 
-Each component requires focused checks before integration. Final verification
-also checks the complete input-to-output flow, error precedence, unchanged inputs,
-repeatable output and user-facing claims against observable results. Integration
-does not replace unit tests or tests for invalid and hostile inputs.
-
-User documentation must explain input layouts and supported formats, the tree
-hash algorithm, offset and fuzz rules, prerequisites, exit codes, timeout and
-cleanup behavior, Linux containers for other hosts, CI use and library examples.
-It must explain that hashes establish byte identity, not trusted origins or a
-security repair. The included tiny C demonstration and text patches are original,
-self-contained fixtures with `local:demonstration` origins. They need no vendor
-assets or sibling checkout. Any future public examples derived from upstream work
-must retain their upstream licenses.
+Unit and integration tests cover error precedence, unchanged inputs and repeatable
+output. The [usage guide](usage.md) documents the supported inputs, digest
+algorithm, GNU patch rules and exit codes. The [Go API guide](api.md) shows how
+to run the same audit from another module. The example C source and patches are
+original fixtures with `local:demonstration` origins.
 
 ## Build and release
 
-The foundation selected the then-current supported stable Go release from
-[go.dev/dl](https://go.dev/dl/) and pinned exact toolchain and dependency versions.
-Linux is the supported runtime; other hosts use the documented Linux container.
+The Linux verification environment pins Go 1.27.4 and its dependencies. Other
+hosts can use the [Linux container](usage.md#local-linux-verification).
 Dependencies and the toolchain are prepared before offline verification.
-Original code uses Apache-2.0, with third-party licenses and attribution preserved
-and any derived fixtures identified.
 
-The release includes reproducible source and Linux amd64/arm64 binary archives,
-checksums, Apache-2.0 licensing, preserved third-party notices, the original
-demonstration and user documentation. The public
-`github.com/firmdura/patchstack-audit/pkg/patchstack` package/version page was
-verified after indexing.
+Releases include reproducible source and Linux amd64/arm64 binary archives,
+checksums, the original demonstration, documentation, the Apache-2.0 license
+and third-party notices. The [Go package reference](https://pkg.go.dev/github.com/firmdura/patchstack-audit/pkg/patchstack)
+lists the public API.
