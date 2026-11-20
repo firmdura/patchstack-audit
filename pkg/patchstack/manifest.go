@@ -2,6 +2,7 @@ package patchstack
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 
@@ -41,15 +42,15 @@ func LoadManifest(reader io.Reader) (Manifest, error) {
 	}
 	root := document.Content[0]
 	if err := checkMapping(root, []string{"schema_version", "source", "patch_dir", "patches"}, nil); err != nil {
-		return invalid()
+		return Manifest{}, err
 	}
 	fields := mapping(root)
 	version := fields["schema_version"]
 	if version.Kind != yaml.ScalarNode || version.Tag != "!!int" || version.Value != "1" || version.Anchor != "" {
 		return invalid()
 	}
-	if checkMapping(fields["source"], []string{"path", "sha256", "root_dir"}, nil) != nil {
-		return invalid()
+	if err := checkMapping(fields["source"], []string{"path", "sha256", "root_dir"}, nil); err != nil {
+		return Manifest{}, err
 	}
 	source := mapping(fields["source"])
 	m := Manifest{SchemaVersion: SchemaVersion}
@@ -71,8 +72,8 @@ func LoadManifest(reader io.Reader) (Manifest, error) {
 	}
 	m.Patches = make([]Patch, 0, len(patches.Content))
 	for _, node := range patches.Content {
-		if checkMapping(node, []string{"id", "file", "sha256", "upstream"}, []string{"cves"}) != nil {
-			return invalid()
+		if err := checkMapping(node, []string{"id", "file", "sha256", "upstream"}, []string{"cves"}); err != nil {
+			return Manifest{}, err
 		}
 		fields := mapping(node)
 		var p Patch
@@ -125,8 +126,14 @@ func mapping(node *yaml.Node) map[string]*yaml.Node {
 }
 
 func checkMapping(node *yaml.Node, required, optional []string) error {
+	invalid := func(at *yaml.Node, message string) error {
+		if at != nil {
+			message = fmt.Sprintf("line %d, column %d: %s", at.Line, at.Column, message)
+		}
+		return &RunError{Stage: StageManifest, Reason: ReasonInvalidManifest, Err: errors.New(message)}
+	}
 	if node == nil || node.Kind != yaml.MappingNode || node.Tag != "!!map" || node.Anchor != "" || len(node.Content)%2 != 0 {
-		return fmt.Errorf("expected mapping")
+		return invalid(node, "expected an unanchored mapping")
 	}
 	allowed := make(map[string]bool)
 	seen := make(map[string]bool)
@@ -137,15 +144,22 @@ func checkMapping(node *yaml.Node, required, optional []string) error {
 		allowed[name] = true
 	}
 	for i := 0; i < len(node.Content); i += 2 {
-		key, err := scalar(node.Content[i])
-		if err != nil || !allowed[key] || seen[key] {
-			return fmt.Errorf("unknown or duplicate key")
+		at := node.Content[i]
+		key, err := scalar(at)
+		if err != nil {
+			return invalid(at, "expected an unanchored string field name")
+		}
+		if !allowed[key] {
+			return invalid(at, "unknown field")
+		}
+		if seen[key] {
+			return invalid(at, "duplicate field "+key)
 		}
 		seen[key] = true
 	}
 	for _, name := range required {
 		if !seen[name] {
-			return fmt.Errorf("missing field")
+			return invalid(node, "missing required field "+name)
 		}
 	}
 	return nil

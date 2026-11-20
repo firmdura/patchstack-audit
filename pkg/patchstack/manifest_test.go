@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -69,6 +70,30 @@ func TestManifestStrictYAML(t *testing.T) {
 			var run *patchstack.RunError
 			if !errors.As(err, &run) || run.Reason != patchstack.ReasonInvalidManifest || m.SchemaVersion != 0 {
 				t.Fatalf("expected zero manifest and typed invalid manifest, got %#v, %v", m, err)
+			}
+		})
+	}
+}
+
+func TestManifestMappingDiagnostics(t *testing.T) {
+	base := validYAML(t)
+	for _, tc := range []struct {
+		name, input, want string
+	}{
+		{"unknown key", "# stack\nowner_note: sample\n" + base, "line 2, column 1: unknown field"},
+		{"duplicate source key", strings.Replace(base, "  root_dir:", "  path: other.tar.gz\n  root_dir:", 1), "line 5, column 3: duplicate field path"},
+		{"missing patch field", strings.Replace(base, "    upstream: https://example.org/project/commit/abc\n", "", 1), "line 13, column 5: missing required field upstream"},
+		{"non-string key", "42: sample\n" + base, "line 1, column 1: expected an unanchored string field name"},
+		{"non-mapping source", "schema_version: 1\nsource: []\npatch_dir: patches\npatches: []\n", "line 2, column 9: expected an unanchored mapping"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m, err := patchstack.LoadManifest(strings.NewReader(tc.input))
+			var run *patchstack.RunError
+			if !errors.As(err, &run) || run.Stage != patchstack.StageManifest || run.Reason != patchstack.ReasonInvalidManifest || !reflect.DeepEqual(m, patchstack.Manifest{}) {
+				t.Fatalf("want empty manifest and typed invalid manifest, got %#v, %v", m, err)
+			}
+			if run.Err == nil || run.Err.Error() != tc.want {
+				t.Fatalf("diagnostic = %v, want %q", run.Err, tc.want)
 			}
 		})
 	}
