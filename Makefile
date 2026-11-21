@@ -9,7 +9,7 @@ prepare:
 verify:
 	./scripts/verify-linux.sh
 
-RELEASE_VERSION ?= v1.0.3
+RELEASE_VERSION ?= v1.0.4
 RELEASE_REF ?= HEAD
 RELEASE_DIR ?= /tmp/patchstack-audit-$(RELEASE_VERSION)-release
 release:

@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/firmdura/patchstack-audit/internal/contracts"
 )
@@ -25,7 +26,7 @@ type API struct {
 	WriteMarkdown func(io.Writer, contracts.Report) error
 }
 
-// Run handles a version request or one audit command, writing output to stdout
+// Run handles a help or version request or one audit command, writing output to stdout
 // and diagnostics to stderr. It returns 0 for success, 1 for an expected mismatch,
 // or 2 for a usage or operational error. It does not exit the calling process.
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer, api API) int {
@@ -40,14 +41,6 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, api API) 
 		}
 		return 0
 	}
-	usage := func() int {
-		fmt.Fprintln(stderr, "usage: patchstack --version")
-		fmt.Fprintln(stderr, "usage: patchstack audit --manifest stack.yaml --input-root ./inputs --output ./out [--format json|markdown] [--patch-executable patch]")
-		return 2
-	}
-	if len(args) == 0 || args[0] != "audit" {
-		return usage()
-	}
 	flags := flag.NewFlagSet("audit", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	manifestPath := flags.String("manifest", "", "path to the version 1 YAML manifest")
@@ -55,6 +48,26 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, api API) 
 	output := flags.String("output", "", "new directory for the patched source and reports; its parent must already exist")
 	format := flags.String("format", "json", "report format printed to standard output: json or markdown")
 	patch := flags.String("patch-executable", "patch", "path or command name of the local GNU patch executable")
+	const synopsis = "usage: patchstack --help | --version\n" +
+		"usage: patchstack audit --manifest stack.yaml --input-root ./inputs --output ./out [--format json|markdown] [--patch-executable patch]\n"
+	if standaloneHelp(args) {
+		var help strings.Builder
+		help.WriteString(synopsis + "\nAudit options:\n")
+		flags.SetOutput(&help)
+		flags.PrintDefaults()
+		if _, err := io.WriteString(stdout, help.String()); err != nil {
+			fmt.Fprintln(stderr, "cannot write help:", err)
+			return 2
+		}
+		return 0
+	}
+	usage := func() int {
+		fmt.Fprint(stderr, synopsis)
+		return 2
+	}
+	if len(args) == 0 || args[0] != "audit" {
+		return usage()
+	}
 	if flags.Parse(args[1:]) != nil {
 		return usage()
 	}
@@ -95,4 +108,18 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer, api API) 
 		return 2
 	}
 	return report.ExitCode(auditErr)
+}
+
+func standaloneHelp(args []string) bool {
+	if len(args) == 2 && args[0] == "audit" {
+		args = args[1:]
+	}
+	if len(args) != 1 {
+		return false
+	}
+	switch args[0] {
+	case "-h", "--h", "-help", "--help":
+		return true
+	}
+	return false
 }

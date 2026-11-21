@@ -22,7 +22,7 @@ inputs and does not download fixes, build software or run the software's tests.
 
 ## Install the CLI
 
-[Release v1.0.3](https://github.com/firmdura/patchstack-audit/releases/tag/v1.0.3)
+[Release v1.0.4](https://github.com/firmdura/patchstack-audit/releases/tag/v1.0.4)
 includes source archives, Linux binaries for amd64 and arm64, and a `SHA256SUMS`
 file. The binary archives include a ready-to-run example and do not require Go.
 See the [archive instructions](docs/usage.md#ci-and-release-preparation) for
@@ -32,17 +32,17 @@ To install with Go on Linux, use Go 1.27.4 and enable network access for this st
 
 ```sh
 GOTOOLCHAIN=go1.27.4 GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org \
-  go install github.com/firmdura/patchstack-audit/cmd/patchstack@v1.0.3
+  go install github.com/firmdura/patchstack-audit/cmd/patchstack@v1.0.4
 ```
 
 Add Go's installation directory for executables to your `PATH` so you can run
 `patchstack`. GNU patch is also required, whichever installation method you use.
-See the [Go API reference for v1.0.3](https://pkg.go.dev/github.com/firmdura/patchstack-audit@v1.0.3/pkg/patchstack)
+See the [Go API reference for v1.0.4](https://pkg.go.dev/github.com/firmdura/patchstack-audit@v1.0.4/pkg/patchstack)
 for the library's exported types and functions.
 
-Run `patchstack --version` to identify an installed release without providing
-inputs or invoking GNU patch. Builds without version metadata report
-`patchstack dev`.
+Run `patchstack --help` to list the audit options or `patchstack --version` to
+identify an installed release. Neither command reads inputs or invokes GNU patch.
+Builds without version metadata report `patchstack dev`.
 
 ## Build and try the example
 

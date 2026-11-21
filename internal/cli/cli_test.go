@@ -69,6 +69,29 @@ func TestRunVersionWithoutAudit(t *testing.T) {
 	}
 }
 
+func TestRunStandaloneHelp(t *testing.T) {
+	for _, option := range []string{"-h", "--help", "-help", "--h"} {
+		for _, args := range [][]string{{option}, {"audit", option}} {
+			t.Run(strings.Join(args, " "), func(t *testing.T) {
+				var out, diagnostics bytes.Buffer
+				if code := Run(context.Background(), args, &out, &diagnostics, API{}); code != 0 || diagnostics.Len() != 0 {
+					t.Fatalf("code=%d stderr=%q", code, diagnostics.String())
+				}
+				want := "--version"
+				if args[0] == "audit" {
+					want = "path to the version 1 YAML manifest"
+				}
+				if !strings.Contains(out.String(), "patchstack audit") || !strings.Contains(out.String(), want) {
+					t.Fatalf("missing help in stdout: %q", out.String())
+				}
+				if code := Run(context.Background(), args, errorWriter{}, &diagnostics, API{}); code != 2 || !strings.Contains(diagnostics.String(), "downstream write failed") {
+					t.Fatalf("write failure: code=%d stderr=%q", code, diagnostics.String())
+				}
+			})
+		}
+	}
+}
+
 func TestRunMalformedManifestAndUsageDoNotAudit(t *testing.T) {
 	manifest := filepath.Join(t.TempDir(), "stack.yaml")
 	if err := os.WriteFile(manifest, []byte("bad"), 0600); err != nil {
@@ -80,7 +103,7 @@ func TestRunMalformedManifestAndUsageDoNotAudit(t *testing.T) {
 		t.Fatal("audit called")
 		return contracts.Report{}, nil
 	}, WriteJSON: func(io.Writer, contracts.Report) error { t.Fatal("writer called"); return nil }, WriteMarkdown: func(io.Writer, contracts.Report) error { t.Fatal("writer called"); return nil }}
-	for _, args := range [][]string{nil, {"--version", "extra"}, {"audit", "--version"}, {"audit", "--format", "unsupported"}, {"audit", "--manifest", manifest, "--input-root", "inputs", "--output", "out"}} {
+	for _, args := range [][]string{nil, {"--version", "extra"}, {"--help", "extra"}, {"audit", "--help", "extra"}, {"audit", "--unknown"}, {"audit", "--version"}, {"audit", "--format", "unsupported"}, {"audit", "--manifest", manifest, "--input-root", "inputs", "--output", "out"}} {
 		var out, diagnostics bytes.Buffer
 		if code := Run(context.Background(), args, &out, &diagnostics, api); code != 2 || out.Len() != 0 || diagnostics.Len() == 0 {
 			t.Fatalf("code=%d out=%s diagnostics=%s", code, out.String(), diagnostics.String())
