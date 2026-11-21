@@ -18,6 +18,8 @@ Archive root: demo&#45;1&#46;0
 
 ## Ordered patches
 
+1 applied, 1 failed, 0 not run.
+
 | Position | ID | File | SHA-256 | Application | Reason | Declared provenance | Declared CVEs |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | z&#45;first | 0001&#45;first&#46;patch | bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb | applied | none | local&#58;demonstration | CVE&#45;2025&#45;0001&#44; CVE&#45;2024&#45;10000 |

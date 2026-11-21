@@ -275,3 +275,19 @@ func TestWriteEmptyCollections(t *testing.T) {
 		t.Fatal("empty series lost its complete source evidence")
 	}
 }
+
+func TestWriteMarkdownCountsUnrunPatchesAfterFailure(t *testing.T) {
+	r := failedRenderReport(patchstack.StageExecution, patchstack.ReasonPatchFailed)
+	r.Patches = append(r.Patches, patchstack.PatchResult{
+		Patch:  patchstack.Patch{ID: "third", File: "third.patch", SHA256: strings.Repeat("d", 64), Upstream: "local:demo"},
+		Status: patchstack.PatchNotRun,
+		Reason: patchstack.ReasonNone,
+	})
+	var out bytes.Buffer
+	if err := patchstack.WriteMarkdown(&out, r); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "1 applied, 1 failed, 1 not run.") {
+		t.Fatalf("missing patch counts:\n%s", &out)
+	}
+}

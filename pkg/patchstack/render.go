@@ -49,6 +49,11 @@ func WriteMarkdown(w io.Writer, report Report) error {
 	if len(report.Patches) == 0 {
 		out.WriteString("No patches declared.\n\n")
 	} else {
+		counts := make(map[PatchStatus]int)
+		for _, patch := range report.Patches {
+			counts[patch.Status]++
+		}
+		fmt.Fprintf(&out, "%d applied, %d failed, %d not run.\n\n", counts[PatchApplied], counts[PatchFailed], counts[PatchNotRun])
 		out.WriteString("| Position | ID | File | SHA-256 | Application | Reason | Declared provenance | Declared CVEs |\n")
 		out.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- |\n")
 		for i, patch := range report.Patches {
