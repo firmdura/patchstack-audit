@@ -43,6 +43,12 @@ func WriteMarkdown(w io.Writer, report Report) error {
 	var out bytes.Buffer
 	out.WriteString("# PatchStack Audit\n\n")
 	fmt.Fprintf(&out, "Schema version: %d\n\nOutcome: %s\n\nStage: %s\n\nReason: %s\n\n", report.SchemaVersion, markdownText(string(report.Outcome)), markdownText(string(report.Stage)), markdownText(string(report.Reason)))
+	for i, patch := range report.Patches {
+		if patch.Status == PatchFailed {
+			fmt.Fprintf(&out, "Failed patch: %d of %d (ID: %s).\n\n", i+1, len(report.Patches), markdownText(patch.ID))
+			break
+		}
+	}
 	out.WriteString("## Source declaration\n\n")
 	fmt.Fprintf(&out, "Archive: %s\n\nSHA-256: %s\n\nArchive root: %s\n\n", markdownText(report.Source.Path), markdownText(report.Source.SHA256), markdownText(report.Source.RootDir))
 	out.WriteString("## Ordered patches\n\n")

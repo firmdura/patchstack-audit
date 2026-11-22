@@ -276,8 +276,9 @@ func TestWriteEmptyCollections(t *testing.T) {
 	}
 }
 
-func TestWriteMarkdownCountsUnrunPatchesAfterFailure(t *testing.T) {
+func TestWriteMarkdownSummaryAfterPatchFailure(t *testing.T) {
 	r := failedRenderReport(patchstack.StageExecution, patchstack.ReasonPatchFailed)
+	r.Patches[1].ID = "change [label]"
 	r.Patches = append(r.Patches, patchstack.PatchResult{
 		Patch:  patchstack.Patch{ID: "third", File: "third.patch", SHA256: strings.Repeat("d", 64), Upstream: "local:demo"},
 		Status: patchstack.PatchNotRun,
@@ -289,5 +290,20 @@ func TestWriteMarkdownCountsUnrunPatchesAfterFailure(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "1 applied, 1 failed, 1 not run.") {
 		t.Fatalf("missing patch counts:\n%s", &out)
+	}
+	if !strings.Contains(out.String(), "Failed patch: 2 of 3 (ID: change &#91;label&#93;).") {
+		t.Fatalf("missing failed patch position or escaped ID:\n%s", &out)
+	}
+}
+
+func TestWriteMarkdownCancellationBetweenPatches(t *testing.T) {
+	r := failedRenderReport(patchstack.StageExecution, patchstack.ReasonCancelled)
+	r.Patches[1].Status, r.Patches[1].Reason = patchstack.PatchNotRun, patchstack.ReasonNone
+	var out bytes.Buffer
+	if err := patchstack.WriteMarkdown(&out, r); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out.String(), "Failed patch:") {
+		t.Fatalf("named a failed patch when none failed:\n%s", &out)
 	}
 }

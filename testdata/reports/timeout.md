@@ -8,6 +8,8 @@ Stage: execution
 
 Reason: timeout
 
+Failed patch: 2 of 2 (ID: a&#45;second).
+
 ## Source declaration
 
 Archive: demo&#46;tar&#46;gz
