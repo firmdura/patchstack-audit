@@ -25,6 +25,14 @@ records. Patch statuses show which patches applied before a failure, which patch
 failed, and which patches were never run. If preparation failed before patch
 execution, all patches are `not_run`.
 
+If a patch cannot be parsed, stderr names its path relative to `--input-root`
+and the one-based line where validation stopped, or the end of the patch if
+text is missing. For example, `patch "patches/0002.patch": line 5: unsupported
+unified hunk line` points to line 5 of the patch file, not line 5 of the
+source file. Check the hunk header's line counts and the prefix on each body
+line (a space for context, `-` for a removal, `+` for an addition). No patch was
+applied; the report records `inventory` / `unsafe_input` and the exit code is 2.
+
 The `stage` identifies where the result arose: `manifest`, `source`, `inventory`,
 `tool`, `execution`, `digest`, `publication` or `output`. A successful report uses
 `complete` with `reason: none`. A patch marked `not_run` also uses reason `none`:

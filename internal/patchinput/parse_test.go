@@ -12,6 +12,26 @@ const modifyPatch = "--- a/file\n+++ b/file\n@@ -1 +1 @@\n-old\n+new\n"
 const addPatch = "--- /dev/null\n+++ b/added\n@@ -0,0 +1,2 @@\n+one\n+two\n"
 const deletePatch = "--- a/deleted\n+++ /dev/null\n@@ -1,2 +0,0 @@\n-one\n-two\n"
 
+func TestParseErrorLocation(t *testing.T) {
+	for _, tc := range []struct{ name, data, want string }{
+		{"second file index", modifyPatch + "diff --git a/file b/file\nindex unfinished\n", "line 7: unsupported Git index"},
+		{"new header", "--- a/file\n+++ b/file\tnot a date\n", "line 2: unsupported header timestamp"},
+		{"second hunk", modifyPatch + "@@ -two +2 @@\n", "line 6: malformed unified hunk header"},
+		{"body", modifyPatch + "@@ -2 +2 @@\n-old\nunfinished edit\n", "line 8: unsupported unified hunk line"},
+		{"truncated", strings.TrimSuffix(modifyPatch, "+new\n"), "end of patch after line 4: truncated unified hunk"},
+		{"unterminated line", strings.TrimSuffix(modifyPatch, "\n"), "line 5:"},
+		{"CR in later section", modifyPatch + "--- a/other\r\n", "line 6:"},
+		{"empty", "", "end of patch:"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := parse([]byte(tc.data))
+			if got != nil || err == nil || !strings.HasPrefix(err.Error(), tc.want) {
+				t.Fatalf("targets=%v, error=%v; want %q", got, err, tc.want)
+			}
+		})
+	}
+}
+
 func TestParseSupportedUnified(t *testing.T) {
 	cases := []struct {
 		name string

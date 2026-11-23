@@ -196,6 +196,32 @@ func TestAuditRealRepeatableAndImmutable(t *testing.T) {
 	auditNoTemp(t, f.base)
 }
 
+func TestAuditLocatesMalformedPatchBeforeExecution(t *testing.T) {
+	f := newAuditFixture(t, 0644)
+	data := []byte("--- a/file.c\n+++ b/file.c\n@@ -1 +1 @@\n-middle\nunfinished edit\n")
+	auditWrite(t, filepath.Join(f.input, "patches", "0002.patch"), data, 0600)
+	f.manifest.Patches[1].SHA256 = auditHash(data)
+	o := f.options("out")
+	r, err := patchstack.Audit(context.Background(), f.manifest, o)
+	auditFailure(t, r, err, patchstack.ReasonUnsafeInput)
+	const want = `patch "patches/0002.patch": line 5: unsupported unified hunk line`
+	if !strings.HasSuffix(err.Error(), want) {
+		t.Fatalf("diagnostic = %q; want suffix %q", err, want)
+	}
+	if r.Stage != patchstack.StageInventory || len(r.Patches) != 2 {
+		t.Fatalf("unexpected failure report: %+v", r)
+	}
+	for _, p := range r.Patches {
+		if p.Status != patchstack.PatchNotRun || p.Reason != patchstack.ReasonNone {
+			t.Fatalf("patch got an execution result: %+v", p)
+		}
+	}
+	if _, err := os.Lstat(o.OutputDir); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("output must be absent: %v", err)
+	}
+	auditNoTemp(t, f.base)
+}
+
 func TestAuditFailureAtomicity(t *testing.T) {
 	for _, tc := range []struct {
 		name   string

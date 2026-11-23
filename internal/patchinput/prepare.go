@@ -193,7 +193,7 @@ func stagePatch(ctx context.Context, req contracts.PatchRequest, stage string, i
 	}
 	targets, err := parse(data)
 	if err != nil {
-		return zero, contracts.ReasonUnsafeInput, err
+		return zero, contracts.ReasonUnsafeInput, fmt.Errorf("patch %q: %w", req.PatchDir+"/"+patch.File, err)
 	}
 	return contracts.StagedPatch{
 		Patch:   patch,
