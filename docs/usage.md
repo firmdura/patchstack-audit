@@ -5,9 +5,9 @@ The format restrictions later in the guide explain which archives and patches
 version 1 accepts. For error codes and recovery steps, see
 [troubleshooting](troubleshooting.md).
 
-## Install v1.0.7
+## Install v1.0.8
 
-The [v1.0.7 release](https://github.com/firmdura/patchstack-audit/releases/tag/v1.0.7)
+The [v1.0.8 release](https://github.com/firmdura/patchstack-audit/releases/tag/v1.0.8)
 provides source archives, Linux binaries for amd64 and arm64, and a `SHA256SUMS`
 file. Binary archives include a ready-to-run example and do not require Go.
 [Verify the checksums](#ci-and-release-preparation) before extracting an archive.
@@ -18,11 +18,11 @@ access for this command:
 
 ```sh
 GOTOOLCHAIN=go1.27.4 GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org \
-  go install github.com/firmdura/patchstack-audit/cmd/patchstack@v1.0.7
+  go install github.com/firmdura/patchstack-audit/cmd/patchstack@v1.0.8
 ```
 
 Add Go's installation directory for executables to your `PATH` so you can run
-`patchstack`. See the [Go API reference for v1.0.7](https://pkg.go.dev/github.com/firmdura/patchstack-audit@v1.0.7/pkg/patchstack)
+`patchstack`. See the [Go API reference for v1.0.8](https://pkg.go.dev/github.com/firmdura/patchstack-audit@v1.0.8/pkg/patchstack)
 for the library's exported types and functions. Audits use only local inputs and
 make no network calls.
 
@@ -30,7 +30,7 @@ make no network calls.
 
 ```sh
 patchstack --version
-# patchstack v1.0.7
+# patchstack v1.0.8
 ```
 
 This command writes the version to standard output and exits successfully without
@@ -204,6 +204,11 @@ type, such as a number where a string is required or a scalar where a list is
 required. For an unknown or repeated field, the diagnostic gives the line and
 column of the offending key. For a missing required field, it names the field
 and points to the start of the mapping that needs it.
+
+If a text field is not a YAML string or has an anchor, the diagnostic names
+the field and points to its value. For example, `patches[1].id must be an
+unanchored YAML string` refers to the second patch. To use `42` as its ID,
+write `id: "42"` rather than `id: 42`.
 
 List patches in the order in which they must be applied. A series can contain
 zero through 256 patches. For an empty series, write `patches: []`; the empty
@@ -481,28 +486,28 @@ output and standard error separately; there is no partial output directory.
 ### Reproduce the release archives
 
 Use a clean Git checkout on Linux, with the release tag and pinned dependencies
-already available. The following commands build from the immutable `v1.0.7` tag.
-The destination `/tmp/patchstack-v1.0.7-release` must not already exist:
+already available. The following commands build from the immutable `v1.0.8` tag.
+The destination `/tmp/patchstack-v1.0.8-release` must not already exist:
 
 ```sh
-./scripts/release.sh v1.0.7 v1.0.7 /tmp/patchstack-v1.0.7-release
-cd /tmp/patchstack-v1.0.7-release
+./scripts/release.sh v1.0.8 v1.0.8 /tmp/patchstack-v1.0.8-release
+cd /tmp/patchstack-v1.0.8-release
 sha256sum -c SHA256SUMS
 ```
 
 The script creates these files:
 
 ```text
-patchstack-audit-v1.0.7-source.tar.gz
-patchstack-audit-v1.0.7-linux-amd64.tar.gz
-patchstack-audit-v1.0.7-linux-arm64.tar.gz
+patchstack-audit-v1.0.8-source.tar.gz
+patchstack-audit-v1.0.8-linux-amd64.tar.gz
+patchstack-audit-v1.0.8-linux-arm64.tar.gz
 SHA256SUMS
 ```
 
 It uses only the selected Git revision, includes the original and third-party
 licenses, and produces reproducible archives. Running the script prepares files
 locally; it does not create a tag, publish a release or request pkg.go.dev indexing.
-The `make release` target defaults to version `v1.0.7` and the current commit.
+The `make release` target defaults to version `v1.0.8` and the current commit.
 Set `RELEASE_VERSION`, `RELEASE_REF` and `RELEASE_DIR` to choose another supported
 version, Git revision or output directory.
 
@@ -520,7 +525,7 @@ run the checksum command above before extracting an archive. If you downloaded
 only one archive, select its entry from `SHA256SUMS`:
 
 ```sh
-grep '  patchstack-audit-v1.0.7-linux-amd64.tar.gz$' SHA256SUMS | sha256sum -c -
+grep '  patchstack-audit-v1.0.8-linux-amd64.tar.gz$' SHA256SUMS | sha256sum -c -
 ```
 
 Use `linux-arm64` in that command if you downloaded the arm64 archive. A matching

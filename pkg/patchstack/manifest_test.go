@@ -75,7 +75,7 @@ func TestManifestStrictYAML(t *testing.T) {
 	}
 }
 
-func TestManifestMappingDiagnostics(t *testing.T) {
+func TestManifestYAMLDiagnostics(t *testing.T) {
 	base := validYAML(t)
 	for _, tc := range []struct {
 		name, input, want string
@@ -85,6 +85,10 @@ func TestManifestMappingDiagnostics(t *testing.T) {
 		{"missing patch field", strings.Replace(base, "    upstream: https://example.org/project/commit/abc\n", "", 1), "line 13, column 5: missing required field upstream"},
 		{"non-string key", "42: sample\n" + base, "line 1, column 1: expected an unanchored string field name"},
 		{"non-mapping source", "schema_version: 1\nsource: []\npatch_dir: patches\npatches: []\n", "line 2, column 9: expected an unanchored mapping"},
+		{"unquoted hash", strings.Replace(base, "'"+strings.Repeat("a", 64)+"'", strings.Repeat("0", 64), 1), "line 4, column 11: source.sha256 must be an unanchored YAML string"},
+		{"anchored directory", strings.Replace(base, "patch_dir: patches", "patch_dir: &dir patches", 1), "line 6, column 12: patch_dir must be an unanchored YAML string"},
+		{"boolean patch ID", strings.Replace(base, "id: second", "id: true", 1), "line 13, column 9: patches[1].id must be an unanchored YAML string"},
+		{"non-string list item", strings.Replace(base, "CVE-2024-0001]", "CVE-2024-0001, 42]", 1), "line 12, column 27: patches[0].cves[1] must be an unanchored YAML string"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			m, err := patchstack.LoadManifest(strings.NewReader(tc.input))

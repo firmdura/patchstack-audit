@@ -54,50 +54,51 @@ func LoadManifest(reader io.Reader) (Manifest, error) {
 	}
 	source := mapping(fields["source"])
 	m := Manifest{SchemaVersion: SchemaVersion}
-	if m.Source.Path, err = scalar(source["path"]); err != nil {
-		return invalid()
+	if m.Source.Path, err = stringField(source["path"], "source.path"); err != nil {
+		return Manifest{}, err
 	}
-	if m.Source.SHA256, err = scalar(source["sha256"]); err != nil {
-		return invalid()
+	if m.Source.SHA256, err = stringField(source["sha256"], "source.sha256"); err != nil {
+		return Manifest{}, err
 	}
-	if m.Source.RootDir, err = scalar(source["root_dir"]); err != nil {
-		return invalid()
+	if m.Source.RootDir, err = stringField(source["root_dir"], "source.root_dir"); err != nil {
+		return Manifest{}, err
 	}
-	if m.PatchDir, err = scalar(fields["patch_dir"]); err != nil {
-		return invalid()
+	if m.PatchDir, err = stringField(fields["patch_dir"], "patch_dir"); err != nil {
+		return Manifest{}, err
 	}
 	patches := fields["patches"]
 	if patches.Kind != yaml.SequenceNode || patches.Tag != "!!seq" || patches.Anchor != "" || len(patches.Content) > MaxPatches {
 		return invalid()
 	}
 	m.Patches = make([]Patch, 0, len(patches.Content))
-	for _, node := range patches.Content {
+	for i, node := range patches.Content {
 		if err := checkMapping(node, []string{"id", "file", "sha256", "upstream"}, []string{"cves"}); err != nil {
 			return Manifest{}, err
 		}
 		fields := mapping(node)
+		path := fmt.Sprintf("patches[%d]", i)
 		var p Patch
-		if p.ID, err = scalar(fields["id"]); err != nil {
-			return invalid()
+		if p.ID, err = stringField(fields["id"], path+".id"); err != nil {
+			return Manifest{}, err
 		}
-		if p.File, err = scalar(fields["file"]); err != nil {
-			return invalid()
+		if p.File, err = stringField(fields["file"], path+".file"); err != nil {
+			return Manifest{}, err
 		}
-		if p.SHA256, err = scalar(fields["sha256"]); err != nil {
-			return invalid()
+		if p.SHA256, err = stringField(fields["sha256"], path+".sha256"); err != nil {
+			return Manifest{}, err
 		}
-		if p.Upstream, err = scalar(fields["upstream"]); err != nil {
-			return invalid()
+		if p.Upstream, err = stringField(fields["upstream"], path+".upstream"); err != nil {
+			return Manifest{}, err
 		}
 		if cves, ok := fields["cves"]; ok {
 			if cves.Kind != yaml.SequenceNode || cves.Tag != "!!seq" || cves.Anchor != "" {
 				return invalid()
 			}
 			p.CVEs = make([]string, 0, len(cves.Content))
-			for _, node := range cves.Content {
-				value, err := scalar(node)
+			for j, node := range cves.Content {
+				value, err := stringField(node, fmt.Sprintf("%s.cves[%d]", path, j))
 				if err != nil {
-					return invalid()
+					return Manifest{}, err
 				}
 				p.CVEs = append(p.CVEs, value)
 			}
@@ -110,9 +111,13 @@ func LoadManifest(reader io.Reader) (Manifest, error) {
 	return m, nil
 }
 
-func scalar(node *yaml.Node) (string, error) {
-	if node == nil || node.Kind != yaml.ScalarNode || node.Tag != "!!str" || node.Anchor != "" {
-		return "", fmt.Errorf("expected string scalar")
+func isString(node *yaml.Node) bool {
+	return node != nil && node.Kind == yaml.ScalarNode && node.Tag == "!!str" && node.Anchor == ""
+}
+
+func stringField(node *yaml.Node, path string) (string, error) {
+	if !isString(node) {
+		return "", invalidYAML(node, path+" must be an unanchored YAML string")
 	}
 	return node.Value, nil
 }
@@ -125,15 +130,16 @@ func mapping(node *yaml.Node) map[string]*yaml.Node {
 	return result
 }
 
-func checkMapping(node *yaml.Node, required, optional []string) error {
-	invalid := func(at *yaml.Node, message string) error {
-		if at != nil {
-			message = fmt.Sprintf("line %d, column %d: %s", at.Line, at.Column, message)
-		}
-		return &RunError{Stage: StageManifest, Reason: ReasonInvalidManifest, Err: errors.New(message)}
+func invalidYAML(at *yaml.Node, message string) error {
+	if at != nil {
+		message = fmt.Sprintf("line %d, column %d: %s", at.Line, at.Column, message)
 	}
+	return &RunError{Stage: StageManifest, Reason: ReasonInvalidManifest, Err: errors.New(message)}
+}
+
+func checkMapping(node *yaml.Node, required, optional []string) error {
 	if node == nil || node.Kind != yaml.MappingNode || node.Tag != "!!map" || node.Anchor != "" || len(node.Content)%2 != 0 {
-		return invalid(node, "expected an unanchored mapping")
+		return invalidYAML(node, "expected an unanchored mapping")
 	}
 	allowed := make(map[string]bool)
 	seen := make(map[string]bool)
@@ -145,21 +151,21 @@ func checkMapping(node *yaml.Node, required, optional []string) error {
 	}
 	for i := 0; i < len(node.Content); i += 2 {
 		at := node.Content[i]
-		key, err := scalar(at)
-		if err != nil {
-			return invalid(at, "expected an unanchored string field name")
+		if !isString(at) {
+			return invalidYAML(at, "expected an unanchored string field name")
 		}
+		key := at.Value
 		if !allowed[key] {
-			return invalid(at, "unknown field")
+			return invalidYAML(at, "unknown field")
 		}
 		if seen[key] {
-			return invalid(at, "duplicate field "+key)
+			return invalidYAML(at, "duplicate field "+key)
 		}
 		seen[key] = true
 	}
 	for _, name := range required {
 		if !seen[name] {
-			return invalid(node, "missing required field "+name)
+			return invalidYAML(node, "missing required field "+name)
 		}
 	}
 	return nil

@@ -11,8 +11,8 @@ version=$1
 ref=$2
 output=$3
 case "$version" in
-    v1.0.7) ;;
-    *) echo 'Supported release version is v1.0.7' >&2; exit 2 ;;
+    v1.0.8) ;;
+    *) echo 'Supported release version is v1.0.8' >&2; exit 2 ;;
 esac
 case "$output" in /*) ;; *) echo 'Release output must be an absolute path' >&2; exit 2 ;; esac
 [ ! -e "$output" ] && [ ! -L "$output" ] || { echo 'Release output must be absent' >&2; exit 1; }
