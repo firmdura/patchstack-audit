@@ -166,7 +166,7 @@ func run(ctx context.Context) int {
 }
 ```
 
-See the [v1.0.0 API reference](https://pkg.go.dev/github.com/firmdura/patchstack-audit@v1.0.0/pkg/patchstack)
+See the [v1.0.8 API reference](https://pkg.go.dev/github.com/firmdura/patchstack-audit@v1.0.8/pkg/patchstack)
 for the library's exported types and functions. To try the program, first prepare
 Go and dependencies as described in the [usage guide](usage.md). Then run these
 commands from the PatchStack Audit checkout root:
@@ -185,7 +185,7 @@ Then prepare the consumer's dependency with networking enabled:
 cd "$consumer"
 go mod init example.com/patchstack-consumer
 go mod edit -go=1.27.0 -toolchain=go1.27.4
-go mod edit -require=github.com/firmdura/patchstack-audit@v1.0.0
+go mod edit -require=github.com/firmdura/patchstack-audit@v1.0.8
 GOTOOLCHAIN=go1.27.4 GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org go mod tidy
 ```
 
